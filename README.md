@@ -2,25 +2,43 @@
 
 This repository contains the code to reproduce the results in our paper *How the Hessian-Spectrum of Neural Networks Depends on Data*, presented at the *Workshop on High Dimensional Learning Dynamics* at the *Internation Conference on Machine Learning*, 2026.
 
+## Environment
+
+The requirements file provided contains PyTorch versions for CUDA 12.6. Please change it to use whatever hardware available to you.
+
+```bash
+export env_name="hess-spec"
+conda create -n ${env_name} python=3.12
+conda activate ${env_name}
+pip install -r requirements.txt
+```
+
 ## Reproducing the Figures
 
 ```bash
 # Figure 1
 python eigvals_w_shallow_networks.py
+
 # Figure 2
 python comparing_bounds.py
+
 # Figure 3
 python sharpness_paramnorm.py
+
 # Figure 4
 python eigvals_w_deep_networks.py
+
 # Figure 5
 python effect_of_isotropy.py
+
 # Figure 6
 python balanced_network_random_data.py
 python effect_of_depth.py
 python sharpness_w_balanced_init.py
+
 # Figure 7
 python effect_of_dataset_size.py
+
 # Figure 8
 python shedding_assumption1.py
 python shedding_assumption2.py
