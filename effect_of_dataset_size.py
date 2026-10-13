@@ -5,16 +5,16 @@ from torch.nn.utils import parameters_to_vector
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import MLP, compute_hvp, lanczos, train_gd
+from utilities import compute_hvp, lanczos, train_gd
 from constants import *
 
 
-Datasets = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
-subset_sizes = (4000, 7000, 10000)
-OUTPUT_DIM, SIGMA_X, MAX_PROPS = 10, 1., np.linspace(0.1, 1.0, 10)
-MODEL, WIDTHS, MODEL_KWARGS = MLP, [64]*3, dict()
-ACTIVATION, ACT_KWARGS = "Linear", dict()
-LOSS_TYPE, LR, OPTIM_KWARGS = "Mean Squared Error", 3e-3, dict()
+DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
+SUBSET_SIZES = (4000, 7000, 10000)
+OUTPUT_DIMS = (10, 10, 10)
+MAX_PROPS = np.linspace(0.1, 1.0, 10)
+WIDTHS = NARROW_DEEP_WIDTHS
+LR = NARROW_DEEP_LR
 
 
 def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
@@ -36,24 +36,24 @@ def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
         * torch.where(den.abs()>1e-8, num/den, (L*sigma_2L/sigma_2).unsqueeze(1))
     return torch.sort(result, descending=True).values.to("cpu").flatten()[:n_eigs].numpy()
 
-fig, axs = plt.subplots(1, 3, figsize=(7.2*3, 4.8*1))
+fig, axs = plt.subplots(1, 3, figsize=(AX_WIDTH*3, AX_HEIGHT*1))
 
 def run(subset_size, ax):
-    for Dataset in Datasets:
+    for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
         numerical_eigvals, theoretical_eigvals = list(), list()
         for max_prop in MAX_PROPS:
-            max_size = subset_size - int(subset_size*(1-max_prop)/(OUTPUT_DIM-1))*(OUTPUT_DIM-1)
+            max_size = subset_size - int(subset_size*(1-max_prop)/(output_dim-1))*(output_dim-1)
             if max_size > 5000:
                 numerical_eigvals.append(torch.nan)
                 L = len(WIDTHS) + 1
                 theoretical_eigvals.append(L*(max_size/subset_size)**(1-1/L))
                 continue
             _, out = train_gd(
-                Dataset=Dataset, output_dim=OUTPUT_DIM, subset_size=SUBSET_SIZE,
+                Dataset=Dataset, output_dim=output_dim, subset_size=SUBSET_SIZE,
                 sigma_x=SIGMA_X, max_prop=max_prop,
                 Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=True,
                 act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-                loss_type=LOSS_TYPE, lr=LR, optim_kwargs=OPTIM_KWARGS,
+                loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
                 epochs=EPOCHS, log_every=EPOCHS, device=DEVICE, seed=SEED,      # Log at the end of training only
                 tracker_fns=(compute_numerical_eigvals, compute_theoretical_eigvals)
             )
@@ -67,7 +67,7 @@ def run(subset_size, ax):
     ax.set_xlabel("Maximum Label Proportion", fontsize=18)
     ax.grid()
 
-for subset_size, ax in zip(subset_sizes, axs):
+for subset_size, ax in zip(SUBSET_SIZES, axs):
     run(subset_size, ax)
 
 axs[0].set_ylabel("Final Sharpness", fontsize=18)

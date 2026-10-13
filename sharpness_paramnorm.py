@@ -4,15 +4,15 @@ import numpy as np
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import MLP, compute_hvp, train_gd
+from utilities import compute_hvp, train_gd
 from constants import *
 
 
 Dataset = datasets.CIFAR10
-OUTPUT_DIM, SIGMA_X, MAX_PROP = 10, 1., None
-MODEL, WIDTHS, MODEL_KWARGS = MLP, ([256]*1, [64]*3), dict()
-ACTIVATION, ACT_KWARGS = "Linear", dict()
-LOSS_TYPE, LR, OPTIM_KWARGS = "Mean Squared Error", 5e-4, dict()
+OUTPUT_DIM = 10
+MAX_PROP = None
+WIDTHS = (WIDE_SHALLOW_WIDTHS, NARROW_DEEP_WIDTHS)
+LR = 5e-4
 
 
 def compute_numerical_eigvals(X, Y, model, device):
@@ -36,7 +36,7 @@ def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
     upper_bounds = torch.sort(upper_bounds, descending=True).values[:n_eigs].to("cpu").numpy()
     return upper_bounds
 
-fig, axs = plt.subplots(1, len(WIDTHS), figsize=(7.2*len(WIDTHS), 4.8*1))
+fig, axs = plt.subplots(1, len(WIDTHS), figsize=(AX_WIDTH*len(WIDTHS), AX_HEIGHT*1))
 
 for widths, ax in zip(WIDTHS, axs):
 
@@ -45,7 +45,7 @@ for widths, ax in zip(WIDTHS, axs):
         sigma_x=SIGMA_X, max_prop=MAX_PROP,
         Model=MODEL, model_kwargs=MODEL_KWARGS, widths=widths, balanced_init=False,
         act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-        loss_type=LOSS_TYPE, lr=LR, optim_kwargs=OPTIM_KWARGS,
+        loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
         epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
         tracker_fns=(compute_numerical_eigvals,),
     )

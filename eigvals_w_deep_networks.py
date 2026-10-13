@@ -7,15 +7,15 @@ from torch.nn.utils import parameters_to_vector
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import MLP, compute_hvp, lanczos, train_gd
+from utilities import compute_hvp, lanczos, train_gd
 from constants import *
 
 
-Datasets = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
-OUTPUT_DIM, SIGMA_X, MAX_PROP = 10, 1., 0.1
-MODEL, WIDTHS, MODEL_KWARGS = MLP, [64]*3, dict()
-ACTIVATION, ACT_KWARGS = "Linear", dict()
-LOSS_TYPE, LR, OPTIM_KWARGS = "Mean Squared Error", 3e-3, dict()
+DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
+OUTPUT_DIMS = (10, 10, 10)
+MAX_PROP = 0.1
+WIDTHS = NARROW_DEEP_WIDTHS
+LR = NARROW_DEEP_LR
 N_EIGS = 10
 
 
@@ -37,16 +37,16 @@ def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
         * torch.where(den.abs()>1e-8, num/den, (L*sigma_2L/sigma_2).unsqueeze(1))
     return torch.sort(result, descending=True).values.to("cpu").flatten()[:n_eigs].numpy()
 
-fig, axs = plt.subplots(1, len(Datasets), figsize=(7.2*len(Datasets), 4.8*1))
+fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
 
-for Dataset, ax in zip(Datasets, axs):
+for Dataset, output_dim, ax in zip(DATASETS, OUTPUT_DIMS, axs):
 
     _, out = train_gd(
-        Dataset=Dataset, output_dim=OUTPUT_DIM, subset_size=SUBSET_SIZE,
+        Dataset=Dataset, output_dim=output_dim, subset_size=SUBSET_SIZE,
         sigma_x=SIGMA_X, max_prop=MAX_PROP,
         Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=True,
         act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-        loss_type=LOSS_TYPE, lr=LR, optim_kwargs=OPTIM_KWARGS,
+        loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
         epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
         tracker_fns=(
             partial(compute_numerical_eigvals, n_eigs=N_EIGS),

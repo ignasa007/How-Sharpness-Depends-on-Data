@@ -4,15 +4,15 @@ import numpy as np
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import MLP, compute_hvp, train_gd
+from utilities import compute_hvp, train_gd
 from constants import *
 
 
-Datasets = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
-OUTPUT_DIM, SIGMA_X, MAX_PROP = 10, 1., None
-MODEL, WIDTHS, MODEL_KWARGS = MLP, [64]*3, dict()
-ACTIVATION, ACT_KWARGS = "Linear", dict()
-LOSS_TYPE, LR, OPTIM_KWARGS = "Mean Squared Error", 3e-3, dict()
+DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
+OUTPUT_DIMS = (10, 10, 10)
+MAX_PROP = None
+WIDTHS = NARROW_DEEP_WIDTHS
+LR = NARROW_DEEP_LR
 
 
 def compute_numerical_eigvals(X, Y, model, device):
@@ -39,16 +39,16 @@ def compute_theoretical_eigvals(X, Y, model, device):
         prod = prod @ layer.weight.data
     return (np.array(prefix_fro_norms)**2 * np.array(suffix_fro_norms[::-1])**2).sum()
 
-fig, axs = plt.subplots(1, len(Datasets), figsize=(7.2*len(Datasets), 4.8*1))
+fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
 
-for Dataset, ax in zip(Datasets, axs):
+for Dataset, output_dim, ax in zip(DATASETS, OUTPUT_DIMS, axs):
 
     _, out = train_gd(
-        Dataset=Dataset, output_dim=OUTPUT_DIM, subset_size=SUBSET_SIZE,
+        Dataset=Dataset, output_dim=output_dim, subset_size=SUBSET_SIZE,
         sigma_x=SIGMA_X, max_prop=MAX_PROP,
         Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=False,
         act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-        loss_type=LOSS_TYPE, lr=LR, optim_kwargs=OPTIM_KWARGS,
+        loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
         epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
         tracker_fns=(compute_numerical_eigvals, compute_theoretical_eigvals)
     )
@@ -75,7 +75,7 @@ for Dataset, ax in zip(Datasets, axs):
 
     ax_twin = ax.twinx()
     ax_twin.plot(losses, color="gray", linewidth=5, alpha=1.0)
-    ax_twin.set_ylabel("Mean Squared Error", fontsize=18, rotation=270, labelpad=20)
+    ax_twin.set_ylabel(fontsize=18, rotation=270, labelpad=20)
 
 axs[0].twinx().legend(*ax.get_legend_handles_labels(), loc="upper left", fontsize=18, framealpha=1.0)
 

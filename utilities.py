@@ -9,8 +9,6 @@ from torch.nn.utils import parameters_to_vector
 from torchvision import transforms
 from torch.utils.data import Subset
 
-from constants import DATASTORE
-
 
 def get_activation(act_name: str, **act_kwargs) -> nn.Module:
 
@@ -165,7 +163,7 @@ def train_gd(
     balanced_init: bool,
     loss_type: str,
     lr: float,
-    optim_kwargs: dict,
+    sgd_kwargs: dict,
     epochs: int,
     log_every: int,
     device: torch.device,
@@ -174,6 +172,7 @@ def train_gd(
     tracker_fns: list[Callable] = [],
 ):
 
+    from constants import DATASTORE
     full_trainset = Dataset(
         root=f"{DATASTORE}/{Dataset.__name__.lower()}",
         train=True, download=True, transform=transforms.ToTensor()
@@ -206,7 +205,7 @@ def train_gd(
     if balanced_init:
         model.balanced_init(seed=seed)
 
-    optimizer = optim.SGD(model.parameters(), lr=lr, **optim_kwargs)
+    optimizer = optim.SGD(model.parameters(), lr=lr, **sgd_kwargs)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=0.5, patience=100, threshold=1e-3, threshold_mode="rel"
     )

@@ -12,10 +12,10 @@ from utilities import loss_fn, compute_hvp, lanczos
 from constants import *
 
 
-Datasets = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
-output_dims = (10, 10, 10)
+DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
+OUTPUT_DIMS = (10, 10, 10)
 d, L = 128, 2
-fig, axs = plt.subplots(1, 3, figsize=(7.2*3, 4.8*1))
+fig, axs = plt.subplots(1, 3, figsize=(AX_WIDTH*3, AX_HEIGHT*1))
 width = 0.8
 hessian_sharpness = None    # Set to any value to not compute sharpness
 
@@ -102,7 +102,7 @@ def whiten(x):
     return x
 
 outs = list()
-for Dataset, output_dim in zip(Datasets, output_dims):
+for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
     outs.append(main(Dataset, identity, output_dim, L, d))
     print()
 
@@ -116,15 +116,15 @@ objs = (
 
 ax = axs[0]
 for i, (obj, label) in enumerate(objs):
-    ax.bar(np.arange(len(Datasets))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
+    ax.bar(np.arange(len(DATASETS))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
 
-ax.set_xticks(ticks=np.arange(len(Datasets)), labels=list(map(lambda x: x.__name__, Datasets)), fontsize=18)
+ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=18)
 ax.tick_params(axis="y", labelsize=15)
 ax.set_yscale("log")
 ax.legend(loc="upper left", fontsize=18, framealpha=1.0)
 
 outs = list()
-for Dataset, output_dim in zip(Datasets, output_dims):
+for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
     outs.append(main(Dataset, whiten, output_dim, L, d))
     print()
 
@@ -137,8 +137,8 @@ objs = (
 
 ax = axs[1]
 for i, (obj, label) in enumerate(objs):
-    ax.bar(np.arange(len(Datasets))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
-ax.set_xticks(ticks=np.arange(len(Datasets)), labels=list(map(lambda x: x.__name__, Datasets)), fontsize=18)
+    ax.bar(np.arange(len(DATASETS))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
+ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=18)
 ax.tick_params(axis="y", labelsize=15)
 ax.set_yscale("log")
 

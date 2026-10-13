@@ -87,7 +87,7 @@ eigs_theory = torch.tensor(sorted(analytical, reverse=True))
 print("Analytical Eigvals:\n")
 print(eigs_theory[:k].numpy(), " ...\n\n", eigs_theory[-k:].numpy(), sep="")
 
-fig, ax = plt.subplots(1, 1, figsize=(7.2*1, 4.8*1))
+fig, ax = plt.subplots(1, 1, figsize=(AX_WIDTH*1, AX_HEIGHT*1))
 ax.plot(range(1, len(eigs_actual_top)+1), eigs_actual_top, linewidth=7.5, label="Computed Eigenvalues")
 ax.plot(range(1, len(eigs_theory)+1), eigs_theory, linewidth=5, linestyle="--", label="Theoretical Predictions")
 ax.tick_params(axis="both", labelsize=15)

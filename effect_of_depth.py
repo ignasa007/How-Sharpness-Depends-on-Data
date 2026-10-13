@@ -10,7 +10,7 @@ ratios = np.array([0.2, 0.5, 5., 10.])
 Ls = np.array([1, 2, 4, 8, 16, 32, 64])
 
 
-fig, ax = plt.subplots(1, 1, figsize=(7.2*1, 4.8*1))
+fig, ax = plt.subplots(1, 1, figsize=(AX_WIDTH*1, AX_HEIGHT*1))
 for ratio in ratios:
     ax.plot(
         Ls, Ls * ratio**(2/Ls) * 0.2**(1-1/Ls),
