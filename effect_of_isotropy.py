@@ -40,7 +40,6 @@ def main(Dataset, feat_transform, output_dim, L, d):
     print(f"OLS regression loss: {loss.item():.6e}")
 
     u_1, s_W, v_L = torch.linalg.svd(w, full_matrices=False)    # (d_0, d_L), (d_L,), (d_L, d_L), assuming d_L < d_0
-    u_1 = u_1
     s_W = s_W ** (1/L)  # Note: don't diag-embed here because torch computes 0^0 = 1
     v_L = v_L.T         # torch.linalg.svd returns the transposed right SVs
     print(f"Distance of u_1 from orthogonality: {torch.max(torch.abs(u_1.T@u_1-torch.eye(output_dim, device=DEVICE))).item():.6e}")
@@ -62,11 +61,12 @@ def main(Dataset, feat_transform, output_dim, L, d):
     if "hessian_sharpness" in globals():
         hessian_sharpness = globals()["hessian_sharpness"]
     else:
+        assert d >= output_dim
         weights = list()
-        dims = [x.size(1)] + [d]*(L-1) + [output_dim]
+        out_dims = [d]*(L-1) + [output_dim]
         u = u_1.clone()
-        for ell, (in_dim, out_dim) in enumerate(zip(dims[:-1], dims[1:]), 1):
-            v = torch.linalg.qr(torch.randn(d, output_dim, device=DEVICE))[0]
+        for ell, out_dim in enumerate(out_dims, 1):
+            v, _ = torch.linalg.qr(torch.randn(out_dim, output_dim, device=DEVICE))
             print(f"Distance of v_{ell} from orthogonality: {torch.max(torch.abs(v.T@v-torch.eye(output_dim, device=DEVICE))).item():.6e}")
             w = (u*s_W) @ v.T
             weights.append(w)

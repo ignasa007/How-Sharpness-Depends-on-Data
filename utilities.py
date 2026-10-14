@@ -38,7 +38,8 @@ class Model(nn.Module):
         return self.emb_layers + [self.readout]
 
     def reset_parameters(self, seed: int = None) -> None:
-        torch.manual_seed(seed)
+        if isinstance(seed, int):
+            torch.manual_seed(seed)
         for layer in self._all_layers():
             layer.reset_parameters()
 
@@ -70,26 +71,60 @@ class MLP(Model):
             x = (u * sigma_x*np.sqrt(u.size(0))) @ vt
         return x
 
+    @torch.no_grad()
     def balanced_init(self, seed: int = None) -> None:
-        # Set seed
-        torch.manual_seed(seed)
         # Setup
         all_layers = self._all_layers()
         d = all_layers[0].in_features
         k = min([d] + [l.out_features for l in all_layers])
         min_norm_sq = min([l.weight.data.norm().square().item() for l in all_layers])
+        # Set seed
+        if isinstance(seed, int):
+            torch.manual_seed(seed)
         # Sample singular values
         s_sq = torch.sort(torch.rand(k), descending=True).values
         s_sq = s_sq * min_norm_sq/s_sq.sum()        # Set the norm of each layer equal to the minimum norm
-        S = torch.diag(torch.sqrt(s_sq))
+        S = torch.sqrt(s_sq)
         # Sample weight matrices
-        V, _ = torch.linalg.qr(torch.randn(d, k))
+        V_l, _ = torch.linalg.qr(torch.randn(d, k))
         for layer in all_layers:
-            U, _ = torch.linalg.qr(torch.randn(layer.out_features, k))
-            with torch.no_grad():
-                W = U @ S @ V.T
-                layer.weight.copy_(W)
-            V = U
+            U_l, _ = torch.linalg.qr(
+                torch.randn(layer.out_features, k)
+            )
+            W_l = (U_l*S) @ V_l.T
+            layer.weight.copy_(W_l)
+            V_l = U_l
+
+    @torch.no_grad()
+    def balanced_solution(self, W: torch.Tensor, seed: int = None) -> None:
+        # Setup
+        all_layers = self._all_layers()
+        output_dim = all_layers[-1].out_features
+        L = len(all_layers)
+        # Assert that the solution matches the layers' shapes, such that W = W_L W_{L-1} ... W_2 W_1
+        assert W.ndim == 2
+        assert W.size(0) == output_dim
+        assert W.size(1) == all_layers[0].in_features
+        # Compute the SVD of the solution, to use for sampling layers' weights
+        U_L, S, V_l = torch.linalg.svd(W, full_matrices=False)
+        assert min([l.out_features for l in all_layers[:-1]]) >= S.numel()
+        S = S ** (1/L)
+        V_l = V_l.T
+        # Set seed
+        if isinstance(seed, int):
+            torch.manual_seed(seed)
+        # Sample weight matrices
+        for layer in all_layers:
+            U_l, _ = torch.linalg.qr(
+                torch.randn(layer.out_features, S.numel(), device=W.device)
+            )
+            W_l = (U_l*S) @ V_l.T
+            layer.weight.copy_(W_l)
+            V_l = U_l
+        # Recompute the last layers' weights to match the left singular-vectors of the solution 
+        with torch.no_grad():
+            W_l = U_L @ U_l.T @ W_l
+            layer.weight.copy_(W_l)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         for emb_layer in self.emb_layers:
@@ -170,6 +205,7 @@ def train_gd(
     seed: int,
     balance_op: Optional[Callable] = None,
     tracker_fns: list[Callable] = [],
+    use_ols_soln: bool = False,
 ):
 
     from constants import DATASTORE
@@ -205,39 +241,70 @@ def train_gd(
     if balanced_init:
         model.balanced_init(seed=seed)
 
-    optimizer = optim.SGD(model.parameters(), lr=lr, **sgd_kwargs)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, factor=0.5, patience=100, threshold=1e-3, threshold_mode="rel"
-    )
-
     losses, param_norms = [], []
     balances = [model.compute_balance(balance_op)] if balance_op is not None else None
     tracked_vals = [[]]
     for tracker_fn in tracker_fns:
         tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
 
-    for epoch in range(1, epochs+1):
+    if use_ols_soln:
 
-        model.train()
-        optimizer.zero_grad()
-        outputs = model(train_inputs)
-        loss = loss_fn(outputs, one_hot, loss_type)
-        loss.backward()
-        optimizer.step()
-        scheduler.step(loss.detach().item())
-
-        losses.append(loss.detach().item())
-        param_norms.append(sq_parameter_norm(model))
+        assert loss_type == "Mean Squared Error"
+        
+        with torch.no_grad():
+            outputs = model(train_inputs)
+            loss = loss_fn(outputs, one_hot, loss_type)
+            losses.append(loss.item())
+            param_norms.append(sq_parameter_norm(model))
+        
+        ols_soln = (torch.linalg.pinv(train_inputs) @ one_hot).T
+        model.balanced_solution(ols_soln, seed=seed)
+        
+        with torch.no_grad():
+            outputs = model(train_inputs)
+            loss = loss_fn(outputs, one_hot, loss_type)
+            losses.append(loss.item())
+            param_norms.append(sq_parameter_norm(model))
+            
+        _, predicted = torch.max(outputs.data, 1)
+        acc = (predicted == labels).float().mean().item() * 100
+        print(f'OLS Solution, Loss: {loss.item():.4f}, Acc: {acc:.2f}%')
+        
         if balance_op is not None:
             balances.append(model.compute_balance(balance_op))
+        tracked_vals.append([])
+        for tracker_fn in tracker_fns:
+            tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
 
-        if epoch % log_every == 0:
-            _, predicted = torch.max(outputs.data, 1)
-            acc = (predicted == labels).float().mean().item() * 100
-            print(f'Epoch [{epoch}/{epochs}], Loss: {loss.item():.4f}, Acc: {acc:.2f}%')
-            tracked_vals.append([])
-            for tracker_fn in tracker_fns:
-                tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
+    else:
+
+        optimizer = optim.SGD(model.parameters(), lr=lr, **sgd_kwargs)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, factor=0.5, patience=100, threshold=1e-3, threshold_mode="rel"
+        )
+
+        for epoch in range(1, epochs+1):
+
+            model.train()
+            optimizer.zero_grad()
+            outputs = model(train_inputs)
+            loss = loss_fn(outputs, one_hot, loss_type)
+            loss.backward()
+            optimizer.step()
+            scheduler.step(loss.detach().item())
+
+            losses.append(loss.detach().item())
+            param_norms.append(sq_parameter_norm(model))
+            if balance_op is not None:
+                balances.append(model.compute_balance(balance_op))
+
+            if epoch % log_every == 0:
+                _, predicted = torch.max(outputs.data, 1)
+                acc = (predicted == labels).float().mean().item() * 100
+                print(f'Epoch [{epoch}/{epochs}], Loss: {loss.item():.4f}, Acc: {acc:.2f}%')
+                tracked_vals.append([])
+                for tracker_fn in tracker_fns:
+                    tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
 
     assets = (train_inputs, one_hot, model)
     out = list(map(np.array, (losses, param_norms)))
