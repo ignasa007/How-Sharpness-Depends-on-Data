@@ -25,7 +25,6 @@ def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
 @torch.no_grad()
 def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
     L = len(list(model.parameters()))
-    U, _, _ = torch.linalg.svd(X, full_matrices=False)
     sigma_2L = (torch.linalg.svdvals(Y) / torch.linalg.matrix_norm(X, 2)).square()
     sigma_2 = sigma_2L ** (1/L)
     num = sigma_2L.unsqueeze(1) - sigma_2L.unsqueeze(0)
