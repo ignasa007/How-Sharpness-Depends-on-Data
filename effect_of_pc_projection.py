@@ -39,8 +39,8 @@ for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
     w = torch.linalg.pinv(x) @ y
     loss = loss_fn(x@w, y, loss_type="Mean Squared Error")
     original_losses.append(loss.item())
-    u, s, vt = torch.linalg.svd(x, full_matrices=False)
-    x = u * s
+    _, r = torch.linalg.qr(x.T, mode="r")
+    x = r.T
     w = torch.linalg.pinv(x) @ y
     loss = loss_fn(x@w, y, loss_type="Mean Squared Error")
     after_projecting.append(loss.item())
