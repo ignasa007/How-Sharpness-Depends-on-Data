@@ -10,6 +10,18 @@ from torchvision import transforms
 from torch.utils.data import Subset
 
 
+def pad(t: torch.Tensor, length: int, value: float = 0., axis: int = 0) -> torch.Tensor:
+    if t.size(axis) >= length:
+        return t
+    size = list(t.shape)
+    size[axis] = length
+    out = torch.full(size, value, dtype=t.dtype, device=t.device)
+    slices = [slice(None)] * t.ndim
+    slices[axis] = slice(0, t.size(axis))
+    out[tuple(slices)] = t
+    return out
+
+
 def get_activation(act_name: str, **act_kwargs) -> nn.Module:
 
     if act_name is None:

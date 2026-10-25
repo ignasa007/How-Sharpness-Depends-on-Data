@@ -7,7 +7,7 @@ from torch.nn.utils import parameters_to_vector
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import compute_hvp, lanczos, train_gd
+from utilities import pad, compute_hvp, lanczos, train_gd
 from constants import *
 
 
@@ -30,8 +30,10 @@ def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
 def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
     W1, W2 = model._all_layers()
     X_spec_norm = torch.linalg.matrix_norm(X, 2)
-    W1_svdvals_sq = torch.linalg.svdvals(W1.weight.data).square()
-    W2_svdvals_sq = torch.linalg.svdvals(W2.weight.data).square()
+    # Make size d_0
+    W1_svdvals_sq = pad(torch.linalg.svdvals(W1.weight.data).square(), W1.weight.data.size(1))
+    # Make size d_2
+    W2_svdvals_sq = pad(torch.linalg.svdvals(W2.weight.data).square(), W2.weight.data.size(0))
     upper_bounds = X_spec_norm**2 / X.size(0) * (
         W1_svdvals_sq[:n_eigs, None] + W2_svdvals_sq[None, :n_eigs]
     ).flatten()
