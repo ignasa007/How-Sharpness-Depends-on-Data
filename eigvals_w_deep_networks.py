@@ -1,4 +1,4 @@
-from os.path import basename, splitext
+import os
 from functools import partial
 from itertools import cycle
 
@@ -76,5 +76,8 @@ axs[0].set_ylabel(r"Eigenvalue", fontsize=18)
 axs[0].legend(loc="upper right", ncol=2, fontsize=18, framealpha=1.0)
 
 fig.tight_layout()
-plt.savefig(f"{ASSETS}/{splitext(basename(__file__))[0]}-LR={LR}.png")
+fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}-LR={LR}.png"
+os.makedirs(os.path.dirname(fn), exist_ok=True)
+plt.savefig(fn)
 plt.close()
+print(f"\nPlot saved at {fn}")

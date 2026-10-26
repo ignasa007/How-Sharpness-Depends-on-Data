@@ -1,4 +1,4 @@
-from os.path import basename, splitext
+import os
 
 import numpy as np
 from torch.nn.utils import parameters_to_vector
@@ -63,5 +63,8 @@ ax.set_xlabel("Maximum Label Proportion", fontsize=18)
 ax.grid()
 
 fig.tight_layout()
-plt.savefig(f"{ASSETS}/{splitext(basename(__file__))[0]}-LR={LR}.png")
+fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}-LR={LR}.png"
+os.makedirs(os.path.dirname(fn), exist_ok=True)
+plt.savefig(fn)
 plt.close()
+print(f"\nPlot saved at {fn}")
