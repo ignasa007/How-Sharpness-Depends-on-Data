@@ -25,6 +25,8 @@ def compute_numerical_eigvals(X, Y, model, device):
     return sum_eigenvalues.item()
 
 fig, axs = plt.subplots(1, len(WIDTHS), figsize=(AX_WIDTH*len(WIDTHS), AX_HEIGHT*1))
+if not hasattr(axs, "__len__"):
+    axs = np.array((axs,))
 
 for widths, ax in zip(WIDTHS, axs):
 

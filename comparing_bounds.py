@@ -33,6 +33,8 @@ def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
     return (W1_spec_norm**2 + W2_spec_norm**2).cpu().numpy(), torch.max(W1_spec_norm**2, W2_spec_norm**2).cpu().numpy()
 
 fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
+if not hasattr(axs, "__len__"):
+    axs = np.array((axs,))
 
 for Dataset, output_dim, ax in zip(DATASETS, OUTPUT_DIMS, axs):
 

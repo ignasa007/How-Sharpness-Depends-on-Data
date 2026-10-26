@@ -15,7 +15,6 @@ from constants import *
 DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
 OUTPUT_DIMS = (10, 10, 10)
 d, L = 128, 2
-fig, axs = plt.subplots(1, 3, figsize=(AX_WIDTH*3, AX_HEIGHT*1))
 width = 0.8
 hessian_sharpness = None    # Set to any value to not compute sharpness
 
@@ -100,6 +99,10 @@ def whiten(x):
     u, _, vt = torch.linalg.svd(x, full_matrices=False)
     x = (u * np.sqrt(x.size(0))) @ vt
     return x
+
+fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
+if not hasattr(axs, "__len__"):
+    axs = np.array((axs,))
 
 outs = list()
 for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):

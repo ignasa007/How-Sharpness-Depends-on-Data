@@ -38,6 +38,8 @@ def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
     return torch.sort(result, descending=True).values.to("cpu").flatten()[:n_eigs].numpy()
 
 fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
+if not hasattr(axs, "__len__"):
+    axs = np.array((axs,))
 
 for Dataset, output_dim, ax in zip(DATASETS, OUTPUT_DIMS, axs):
 
