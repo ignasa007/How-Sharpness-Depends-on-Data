@@ -10,12 +10,11 @@ from utilities import pad
 
 n, L = 100, 5
 d_in, d_hid, d_out = 20, 15, 10
-widths = [d_in] + [d_hid]*(L-1) + [d_out]
 sigma_x = 3
 
 assert n >= d_in
+widths = [d_in] + [d_hid]*(L-1) + [d_out]
 k = min(widths)
-L = len(widths) - 1
 X_spec_norm = n**0.5 * sigma_x
 
 # 1. Generate whitened X
@@ -80,7 +79,7 @@ for i in range(d_in):
         analytical.append(sigma_x**2*val)
 
 eigs_theory = np.sort(analytical, descending=True)
-eigs_actual = np.sort(eigs_actual, descending=True)
+eigs_actual = eigs_actual.flip(0).numpy()
 
 k = 10
 print(f"\nAlignment Verification (L = {len(weights)}, widths = {", ".join(map(str, widths))})")
