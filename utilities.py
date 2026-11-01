@@ -41,27 +41,8 @@ def get_activation(act_name: str, **act_kwargs) -> nn.Module:
 
     raise ValueError(f"Don't recognize `act_name={act_name}`.")
 
-class Model(nn.Module):
 
-    def __init__(self):
-        super().__init__()
-
-    def _all_layers(self) -> list[nn.Module]:
-        return self.emb_layers + [self.readout]
-
-    def reset_parameters(self, seed: int = None) -> None:
-        if isinstance(seed, int):
-            torch.manual_seed(seed)
-        for layer in self._all_layers():
-            layer.reset_parameters()
-
-    def prepare_input(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError
-
-class MLP(Model):
+class MLP(nn.Module):
 
     def __init__(
         self, widths: list[int], act_name: str, act_kwargs: dict, output_dim: int,
@@ -73,13 +54,22 @@ class MLP(Model):
         self.normalization = nn.LayerNorm(widths[-1], eps=1e-12, elementwise_affine=False) if normalization else nn.Identity()
         self.readout = nn.LazyLinear(output_dim, bias=False)
 
+    def _all_layers(self) -> list[nn.Module]:
+        return self.emb_layers + [self.readout]
+
+    def reset_parameters(self, seed: int = None) -> None:
+        if isinstance(seed, int):
+            torch.manual_seed(seed)
+        for layer in self._all_layers():
+            layer.reset_parameters()
+
     @torch.no_grad()
     def prepare_input(self, x: torch.Tensor, sigma_x: Optional[float] = None) -> torch.Tensor:
         x = x.view(x.size(0), -1)
         self.forward(x[:1])     # Initialize lazy layers
         if sigma_x is not None:
             assert x.size(0) >= x.size(1)
-            u, s, vt = torch.linalg.svd(x, full_matrices=False)
+            u, _, vt = torch.linalg.svd(x, full_matrices=False)
             x = (u * sigma_x*np.sqrt(u.size(0))) @ vt
         return x
 
@@ -144,39 +134,14 @@ class MLP(Model):
         x = self.normalization(x)
         return self.readout(x)
 
-    def compute_balance(self, balance_op: Callable = torch.linalg.norm) -> list:
-        all_layers = self._all_layers()
-        out = list()
-        for idx in range(len(all_layers)-1):
-            out.append(balance_op(
-                all_layers[idx].weight.data @ all_layers[idx].weight.data.T
-                - all_layers[idx+1].weight.data.T @ all_layers[idx+1].weight.data
-            ))
-        return out
-
 def loss_fn(outputs, one_hot, loss_type):
     if loss_type.lower() == "cross entropy loss":
         return F.cross_entropy(outputs, one_hot, reduction="sum") / outputs.size(0)
     elif loss_type.lower() == "mean squared error":
         return 0.5 * F.mse_loss(outputs, one_hot, reduction="sum") / outputs.size(0)
 
-def loss_gradient(outputs, one_hot, loss_type):
-    if loss_type.lower() == "cross entropy loss":
-        return (torch.softmax(outputs, dim=1) - one_hot) / outputs.size(0)
-    elif loss_type.lower() == "mean squared error":
-        return (outputs - one_hot) / outputs.size(0)
-
-def alignment(outputs, one_hot, loss_type):
-    return (outputs * -loss_gradient(outputs, one_hot, loss_type)).sum().item()
-
-def sq_parameter_norm(model):
+def sq_parameter_norm(X, Y, model, device):
     return [p.norm().square().item() for p in model.parameters()]
-
-def compute_gradient(X, Y, model):
-    model.zero_grad()
-    loss = loss_fn(model(X), Y, loss_type="Mean Squared Error")
-    gradient = parameters_to_vector(autograd.grad(loss, inputs=model.parameters()))
-    return gradient
 
 def compute_hvp(X, Y, model, vector, device):
     model.zero_grad()
@@ -215,7 +180,6 @@ def train_gd(
     log_every: int,
     device: torch.device,
     seed: int,
-    balance_op: Optional[Callable] = None,
     tracker_fns: list[Callable] = [],
     use_ols_soln: bool = False,
 ):
@@ -253,8 +217,7 @@ def train_gd(
     if balanced_init:
         model.balanced_init(seed=seed)
 
-    losses, param_norms = [], []
-    balances = [model.compute_balance(balance_op)] if balance_op is not None else None
+    losses = list()
     tracked_vals = [[]]
     for tracker_fn in tracker_fns:
         tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
@@ -267,7 +230,6 @@ def train_gd(
             outputs = model(train_inputs)
             loss = loss_fn(outputs, one_hot, loss_type)
             losses.append(loss.item())
-            param_norms.append(sq_parameter_norm(model))
         
         ols_soln = (torch.linalg.pinv(train_inputs) @ one_hot).T
         model.balanced_solution(ols_soln, seed=seed)
@@ -276,14 +238,11 @@ def train_gd(
             outputs = model(train_inputs)
             loss = loss_fn(outputs, one_hot, loss_type)
             losses.append(loss.item())
-            param_norms.append(sq_parameter_norm(model))
             
         _, predicted = torch.max(outputs.data, 1)
         acc = (predicted == labels).float().mean().item() * 100
         print(f'OLS Solution, Loss: {loss.item():.4f}, Acc: {acc:.2f}%')
         
-        if balance_op is not None:
-            balances.append(model.compute_balance(balance_op))
         tracked_vals.append([])
         for tracker_fn in tracker_fns:
             tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
@@ -306,10 +265,6 @@ def train_gd(
             scheduler.step(loss.detach().item())
 
             losses.append(loss.detach().item())
-            param_norms.append(sq_parameter_norm(model))
-            if balance_op is not None:
-                balances.append(model.compute_balance(balance_op))
-
             if epoch % log_every == 0:
                 _, predicted = torch.max(outputs.data, 1)
                 acc = (predicted == labels).float().mean().item() * 100
@@ -319,8 +274,7 @@ def train_gd(
                     tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
 
     assets = (train_inputs, one_hot, model)
-    out = list(map(np.array, (losses, param_norms)))
-    out.append(np.array(balances) if balance_op is not None else None)
+    out = [np.array(losses)]
     out.extend(list(map(np.array, zip(*tracked_vals))))
 
     return assets, tuple(out)

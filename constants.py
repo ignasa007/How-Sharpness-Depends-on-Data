@@ -4,6 +4,7 @@ from utilities import MLP
 
 
 DATASTORE = "./datasets"
+RESULTS = "./results"
 ASSETS = "./assets"
 
 SUBSET_SIZE = 5000
@@ -30,5 +31,7 @@ SEED = 0
 
 HUTCHINSON_SAMPLES = 100
 
-AX_WIDTH = 6.8
-AX_HEIGHT = 4.8
+AX_WIDTH = 6.4
+AX_HEIGHT = 5.4
+LABEL_SIZE = 18
+FONT_SIZE = 21

@@ -19,6 +19,8 @@ from utilities import loss_fn
 from constants import *
 
 
+source_name = os.path.splitext(os.path.basename(__file__))[0]
+
 DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
 OUTPUT_DIMS = (10, 10, 10)
 fig, ax = plt.subplots(1, 1, figsize=(AX_WIDTH*1, AX_HEIGHT*1))
@@ -47,14 +49,14 @@ for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
 
 ax.bar(np.arange(len(DATASETS))-width/4, original_losses, width=width/2, label="Original Dataset")
 ax.bar(np.arange(len(DATASETS))+width/4, after_projecting, width=width/2, label="Projected onto PCs")
-ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=18)
-ax.tick_params(axis="y", labelsize=15)
-ax.set_ylabel("Optimal Loss", fontsize=18)
-ax.legend(loc="upper left", fontsize=18, framealpha=1.0)
+ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=FONT_SIZE)
+ax.tick_params(axis="y", labelsize=LABEL_SIZE)
+ax.set_ylabel("Optimal Loss", fontsize=FONT_SIZE)
+ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
 ax.grid()
 
 fig.tight_layout()
-fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}.png"
+fn = f"{ASSETS}/{source_name}.png"
 os.makedirs(os.path.dirname(fn), exist_ok=True)
 plt.savefig(fn)
 plt.close()

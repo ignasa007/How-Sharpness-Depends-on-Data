@@ -17,16 +17,16 @@ pip install -r requirements.txt
 
 ```bash
 # Figure 1
-python eigvals_w_shallow_networks.py
+python eigvals_error_shallow.py
 
 # Figure 2
-python comparing_bounds.py
+python comparing_bounds_shallow.py
 
 # Figure 3
-python sharpness_paramnorm.py
+python sharpness_vs_param_norm.py
 
 # Figure 4
-python eigvals_w_deep_networks.py
+python eigvals_error_deep.py
 
 # Figure 5
 python effect_of_isotropy.py
@@ -34,15 +34,15 @@ python effect_of_isotropy.py
 # Figure 6
 python balanced_network_random_data.py
 python effect_of_depth.py
-python sharpness_w_balanced_init.py
+python sharpness_balanced_init.py
 
 # Figure 7
 python effect_of_dataset_size.py
 
 # Figure 8
-python shedding_assumption1.py
-python shedding_assumption2.py
-python effect_of_activation.py
+python ablation_anisotropic_features.py
+python ablation_unbalanced_weights.py
+python ablation_nonlinear_activation.py
 ```
 
 ## Anistropic Feature Covariance

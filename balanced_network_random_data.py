@@ -8,6 +8,8 @@ from constants import *
 from utilities import pad
 
 
+source_name = os.path.splitext(os.path.basename(__file__))[0]
+
 n, L = 100, 5
 d_in, d_hid, d_out = 20, 15, 10
 sigma_x = 3
@@ -92,15 +94,15 @@ print(f"Analytical Eigvals:\n{eigs_theory[:k]} ...\n{eigs_theory[-k:]}")
 fig, ax = plt.subplots(1, 1, figsize=(AX_WIDTH*1, AX_HEIGHT*1))
 ax.plot(range(1, len(eigs_actual)+1), eigs_actual, linewidth=7.5, label="Computed Eigenvalues")
 ax.plot(range(1, len(eigs_theory)+1), eigs_theory, linewidth=5, linestyle="--", label="Theoretical Predictions")
-ax.tick_params(axis="both", labelsize=15)
-ax.set_xlabel(r"Index, $i$", fontsize=18)
-ax.set_ylabel(r"Eigenvalue, $\lambda_i$", fontsize=18)
+ax.tick_params(axis="both", labelsize=LABEL_SIZE)
+ax.set_xlabel(r"Index, $i$", fontsize=FONT_SIZE)
+ax.set_ylabel(r"Eigenvalue, $\lambda_i$", fontsize=FONT_SIZE)
 ax.set_xscale("log")
 ax.grid()
-ax.legend(loc="upper right", framealpha=1., fontsize=18)
+ax.legend(loc="upper right", framealpha=1., fontsize=FONT_SIZE)
 
 fig.tight_layout()
-fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}.png"
+fn = f"{ASSETS}/{source_name}.png"
 os.makedirs(os.path.dirname(fn), exist_ok=True)
 plt.savefig(fn)
 plt.close()

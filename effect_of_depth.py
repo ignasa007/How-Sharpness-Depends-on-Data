@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 from constants import *
 
 
+source_name = os.path.splitext(os.path.basename(__file__))[0]
+
 ratios = np.array([0.2, 0.5, 5., 10.])
 Ls = np.array([1, 2, 4, 8, 16, 32, 64])
 
@@ -17,16 +19,16 @@ for ratio in ratios:
         linewidth=5, marker="o", markersize=8, label=rf"$\|X\|^2_2/n = {ratio}$"
     )
 
-ax.tick_params(axis="both", labelsize=15)
+ax.tick_params(axis="both", labelsize=LABEL_SIZE)
 ax.set_xscale("log", base=2)
 ax.set_yscale("log")
 ax.set_xlabel(r"Depth", size=18)
 ax.set_ylabel(r"Sharpness", size=18)
 ax.grid()
-ax.legend(fontsize=18, framealpha=1.)
+ax.legend(fontsize=FONT_SIZE, framealpha=1.)
 
 fig.tight_layout()
-fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}.png"
+fn = f"{ASSETS}/{source_name}.png"
 os.makedirs(os.path.dirname(fn), exist_ok=True)
 plt.savefig(fn)
 plt.close()

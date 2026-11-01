@@ -1,5 +1,6 @@
 import os
 from inspect import signature
+import pickle
 
 import numpy as np
 import torch
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 from utilities import loss_fn, compute_hvp, lanczos
 from constants import *
 
+
+source_name = os.path.splitext(os.path.basename(__file__))[0]
 
 DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
 OUTPUT_DIMS = (10, 10, 10)
@@ -121,10 +124,10 @@ ax = axs[0]
 for i, (obj, label) in enumerate(objs):
     ax.bar(np.arange(len(DATASETS))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
 
-ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=18)
-ax.tick_params(axis="y", labelsize=15)
+ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=FONT_SIZE)
+ax.tick_params(axis="y", labelsize=LABEL_SIZE)
 ax.set_yscale("log")
-ax.legend(loc="upper left", fontsize=18, framealpha=1.0)
+ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
 
 outs = list()
 for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
@@ -141,8 +144,8 @@ objs = (
 ax = axs[1]
 for i, (obj, label) in enumerate(objs):
     ax.bar(np.arange(len(DATASETS))+(-len(objs)+1+2*i)*width/(2*len(objs)), obj, width=width/len(objs), label=label)
-ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=18)
-ax.tick_params(axis="y", labelsize=15)
+ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=FONT_SIZE)
+ax.tick_params(axis="y", labelsize=LABEL_SIZE)
 ax.set_yscale("log")
 
 Dataset, output_dim = datasets.MNIST, 10
@@ -169,12 +172,12 @@ ax = axs[2]
 for i, (obj, label) in enumerate(objs):
     ax.plot(pert_rads, obj, linewidth=5, marker="o", markersize=8, label=label)
 
-ax.tick_params(axis="both", labelsize=15)
+ax.tick_params(axis="both", labelsize=LABEL_SIZE)
 ax.set_yscale("log")
-ax.set_xlabel("Std. Dev. for SV Sampling", fontsize=18)
+ax.set_xlabel("Std. Dev. for SV Sampling", fontsize=FONT_SIZE)
 
 fig.tight_layout()
-fn = f"{ASSETS}/{os.path.splitext(os.path.basename(__file__))[0]}.png"
+fn = f"{ASSETS}/{source_name}.png"
 os.makedirs(os.path.dirname(fn), exist_ok=True)
 plt.savefig(fn)
 plt.close()
