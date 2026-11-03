@@ -51,7 +51,8 @@ if __name__ == "__main__":
                 act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
                 loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
                 epochs=EPOCHS, log_every=EPOCHS, device=DEVICE, seed=SEED,      # Log at the end of training only
-                tracker_fns=(compute_numerical_eigvals, compute_theoretical_eigvals)
+                tracker_fns=(compute_numerical_eigvals, compute_theoretical_eigvals),
+                use_ols_soln=True
             )
             assets, out = train_gd(**kwargs)
             fn = f"{RESULTS}/{source_name}/{Dataset.__name__.lower()}/max_prop={max_prop:.1f}.pt"
