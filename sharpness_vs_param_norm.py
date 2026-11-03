@@ -54,7 +54,7 @@ if __name__ == "__main__":
         p = ax.plot(
             LOG_EVERY*np.arange(0, len(numerical_eigvals)),
             numerical_eigvals,
-            linestyle="-", linewidth=5, alpha=1.0, color="blue"
+            linestyle="-", linewidth=LINE_WIDTH, color="blue"
         )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         p = ax_twin.plot(
             LOG_EVERY*np.arange(0, len(sq_param_norms)),
             sq_param_norms.sum(axis=1),
-            linestyle="--", linewidth=5, alpha=1.0, color="brown"
+            linestyle="--", linewidth=LINE_WIDTH, color="brown"
         )
         ax_twin.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax_twin.set_ylabel("Parameter Norm", fontsize=FONT_SIZE, color=p[-1].get_color(), rotation=270, labelpad=20)

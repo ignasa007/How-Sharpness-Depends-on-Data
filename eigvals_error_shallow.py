@@ -73,14 +73,14 @@ if __name__ == "__main__":
             ax.plot(
                 LOG_EVERY*np.arange(0, len(numerical_eigvals)),
                 100*np.abs(1-theoretical_eigvals[:,i]/numerical_eigvals[:,i]),
-                linewidth=5, linestyle=next(linestyles), alpha=1.0, label=rf"$\lambda_{{{i+1}}}$"
+                linewidth=LINE_WIDTH, linestyle=next(linestyles), label=rf"$\lambda_{{{i+1}}}$"
             )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
         ax.grid()
 
     axs[0].set_ylabel(r"%Error in $\lambda_{{i}}$ Approximation", fontsize=FONT_SIZE)
-    axs[0].legend(loc="upper right", ncol=2, fontsize=FONT_SIZE, framealpha=1.0)
+    axs[0].legend(loc="upper right", ncol=2, fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
     fig.tight_layout()
     fn = f"{ASSETS}/{source_name}.png"

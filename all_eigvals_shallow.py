@@ -74,15 +74,16 @@ if __name__ == "__main__":
         os.makedirs(os.path.dirname(fn), exist_ok=True)
         torch.save(dict(kwargs=kwargs, assets=assets, out=out), fn)
 
-        ax.plot(range(1, len(numerical_eigvals)+1), numerical_eigvals, linewidth=7.5, label="Numerical Eigenvalues")
-        ax.plot(range(1, len(theoretical_eigvals)+1), theoretical_eigvals, linewidth=5, linestyle="--", label="Analytical Eigenvalues")
+        ax.plot(range(1, len(numerical_eigvals)+1), numerical_eigvals, linewidth=1.5*LINE_WIDTH, label="Computed")
+        ax.plot(range(1, len(theoretical_eigvals)+1), theoretical_eigvals, linewidth=LINE_WIDTH, linestyle="--", label="Predicted")
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel(r"Index, $i$", fontsize=FONT_SIZE)
+        ax.set_ylabel(r"Eigenvalue, $\lambda_i$", fontsize=FONT_SIZE)
         ax.set_title(Dataset.__name__, fontsize=20)
         ax.set_xscale("log")
         ax.grid()
 
-    axs[0].legend(loc="lower left", fontsize=FONT_SIZE, framealpha=1.0)
+    axs[0].legend(loc="lower left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
     fig.tight_layout()
     fn = f"{ASSETS}/{source_name}.png"

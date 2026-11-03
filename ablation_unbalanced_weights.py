@@ -60,14 +60,14 @@ if __name__ == "__main__":
             *_, numerical_eigval, theoretical_eigval = out
             numerical_eigvals.append(numerical_eigval[-1].item())
             theoretical_eigvals.append(theoretical_eigval[-1].item())
-        ax.plot(MAX_PROPS, numerical_eigvals, linewidth=5, marker="o", ms=8, mew=3, alpha=1.0, label=None)  # Dataset.__name__
-    ax.plot(MAX_PROPS, theoretical_eigvals, linewidth=5, marker="o", ms=8, mew=3, color="black", alpha=1.0, label="Predictions")
+        ax.plot(MAX_PROPS, numerical_eigvals, linewidth=LINE_WIDTH, marker="o", ms=MARKER_SIZE, label=None)  # Dataset.__name__
+    ax.plot(MAX_PROPS, theoretical_eigvals, linewidth=LINE_WIDTH, marker="o", ms=MARKER_SIZE, color="black", label="Predictions")
 
     ax.set_xticks(MAX_PROPS)
     ax.tick_params(axis="both", labelsize=LABEL_SIZE)
     ax.set_xlabel("Maximum Label Proportion", fontsize=FONT_SIZE)
     # ax.set_ylabel("Final Sharpness", fontsize=FONT_SIZE)
-    ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
+    ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
     ax.grid()
 
     fig.tight_layout()

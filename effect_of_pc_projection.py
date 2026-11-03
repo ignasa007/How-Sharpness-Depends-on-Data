@@ -53,8 +53,7 @@ ax.bar(np.arange(len(DATASETS))+width/4, after_projecting, width=width/2, label=
 ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=FONT_SIZE)
 ax.tick_params(axis="y", labelsize=LABEL_SIZE)
 ax.set_ylabel("Optimal Loss", fontsize=FONT_SIZE)
-ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
-ax.grid()
+ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
 fig.tight_layout()
 fn = f"{ASSETS}/{source_name}.png"

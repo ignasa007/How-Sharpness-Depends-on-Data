@@ -127,7 +127,7 @@ for i, (obj, label) in enumerate(objs):
 ax.set_xticks(ticks=np.arange(len(DATASETS)), labels=list(map(lambda x: x.__name__, DATASETS)), fontsize=FONT_SIZE)
 ax.tick_params(axis="y", labelsize=LABEL_SIZE)
 ax.set_yscale("log")
-ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
+ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
 outs = list()
 for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
@@ -170,7 +170,7 @@ objs = (
 
 ax = axs[2]
 for i, (obj, label) in enumerate(objs):
-    ax.plot(pert_rads, obj, linewidth=5, marker="o", markersize=8, label=label)
+    ax.plot(pert_rads, obj, linewidth=LINE_WIDTH, marker="o", markersize=MARKER_SIZE, label=label)
 
 ax.tick_params(axis="both", labelsize=LABEL_SIZE)
 ax.set_yscale("log")

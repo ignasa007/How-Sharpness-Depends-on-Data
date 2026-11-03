@@ -146,7 +146,6 @@ def sq_parameter_norm(inputs, labels, model, device):
 def compute_hvp(inputs, labels, model, loss_type, vector, device):
     model.zero_grad()
     vector = vector.to(device)
-    print(loss_type)
     loss = loss_fn(model(inputs), labels, loss_type=loss_type)
     grad = autograd.grad(loss, model.parameters(), create_graph=True)
     dot = parameters_to_vector(grad).mul(vector).sum()

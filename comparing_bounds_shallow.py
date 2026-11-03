@@ -65,25 +65,25 @@ if __name__ == "__main__":
         ax.plot(
             LOG_EVERY*np.arange(0, len(numerical_eigvals)),
             numerical_eigvals,
-            linewidth=5, color="black", alpha=1.0, label="Sharpness"
+            linewidth=LINE_WIDTH, color="black", label="Sharpness"
         )
         ax.plot(
             LOG_EVERY*np.arange(0, len(theoretical_eigvals)),
             theoretical_eigvals[:,0],
-            linewidth=5, linestyle="--", color="blue", alpha=1.0,
+            linewidth=LINE_WIDTH, linestyle="--", color="blue",
             label=r"$\|W_1\|_2^2+\|W_2\|_2^2$"
         )
         ax.plot(
             LOG_EVERY*np.arange(0, len(theoretical_eigvals)),
             theoretical_eigvals[:,1],
-            linewidth=5, linestyle="--", color="brown", alpha=1.0,
+            linewidth=LINE_WIDTH, linestyle="--", color="brown",
             label=r"$\max\{\|W_1\|_2^2, \|W_2\|_2^2\}$"
         )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
         ax.grid()
 
-    axs[0].legend(loc="upper right", fontsize=FONT_SIZE, framealpha=1.0)
+    axs[0].legend(loc="upper right", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
     fig.tight_layout()
     fn = f"{ASSETS}/{source_name}.png"
