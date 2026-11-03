@@ -10,7 +10,8 @@ ASSETS = "./assets"
 SUBSET_SIZE = 5000
 SIGMA_X = 1.
 
-LOSS_TYPE = "Mean Squared Error"
+MSE_LOSS = "Mean Squared Error"
+CE_LOSS = "Cross Entropy Loss"
 EPOCHS = 10000
 LOG_EVERY = 500
 

@@ -9,12 +9,12 @@ from utilities import sq_parameter_norm, compute_hvp, train_gd
 from constants import *
 
 
-def compute_numerical_eigvals(X, Y, model, device):
+def compute_numerical_eigvals(inputs, labels, model, loss_type, device):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     sum_samples = 0.
-    for i in range(1, HUTCHINSON_SAMPLES+1):
+    for _ in range(1, HUTCHINSON_SAMPLES+1):
         random_vector = torch.randn(num_params, device=device)
-        sum_samples += random_vector @ compute_hvp(X, Y, model, random_vector, device)
+        sum_samples += random_vector @ compute_hvp(inputs, labels, model, random_vector, device)
     sum_eigenvalues = sum_samples / HUTCHINSON_SAMPLES
     return sum_eigenvalues.item()
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
             sigma_x=SIGMA_X, max_prop=MAX_PROP,
             Model=MODEL, model_kwargs=MODEL_KWARGS, widths=widths, balanced_init=False,
             act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-            loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
+            loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
             epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
             tracker_fns=(sq_parameter_norm, compute_numerical_eigvals),
         )

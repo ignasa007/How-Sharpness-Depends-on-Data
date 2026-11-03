@@ -23,6 +23,7 @@ source_name = os.path.splitext(os.path.basename(__file__))[0]
 
 DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
 OUTPUT_DIMS = (10, 10, 10)
+LOSS_TYPE = MSE_LOSS
 fig, ax = plt.subplots(1, 1, figsize=(AX_WIDTH*1, AX_HEIGHT*1))
 width = 0.8
 
@@ -39,12 +40,12 @@ for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
     x = x.view(x.size(0), -1).float().to(DEVICE)                # (n, d_0)
     y = F.one_hot(y, num_classes=output_dim).float().to(DEVICE) # (n, d_L)
     w = torch.linalg.pinv(x) @ y
-    loss = loss_fn(x@w, y, loss_type="Mean Squared Error")
+    loss = loss_fn(x@w, y, loss_type=LOSS_TYPE)
     original_losses.append(loss.item())
     _, r = torch.linalg.qr(x.T, mode="r")
     x = r.T
     w = torch.linalg.pinv(x) @ y
-    loss = loss_fn(x@w, y, loss_type="Mean Squared Error")
+    loss = loss_fn(x@w, y, loss_type=LOSS_TYPE)
     after_projecting.append(loss.item())
 
 ax.bar(np.arange(len(DATASETS))-width/4, original_losses, width=width/2, label="Original Dataset")

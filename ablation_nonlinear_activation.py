@@ -1,30 +1,30 @@
 import os
-import pickle
 
 import numpy as np
 from torch.nn.utils import parameters_to_vector
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import compute_hvp, lanczos, train_gd
+from utilities import pad, compute_hvp, lanczos, train_gd
 from constants import *
 
 
-def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
+def compute_numerical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     model.zero_grad()
     parameters = parameters_to_vector(model.parameters()).detach().cpu()
-    hvp_delta = lambda vector: compute_hvp(X, Y, model, vector, device).detach().cpu()
+    hvp_delta = lambda vector: compute_hvp(inputs, labels, model, loss_type, vector, device).detach().cpu()
     eigenvalues, _ = lanczos(tensor_matvec=hvp_delta, p=len(parameters), n_eigs=n_eigs)
     return eigenvalues.numpy()
 
 @torch.no_grad()
-def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
+def compute_theoretical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     L = len(list(model.parameters()))
-    sigma_2L = (torch.linalg.svdvals(Y) / torch.linalg.matrix_norm(X, 2)).square()
+    X_spec_norm = torch.linalg.matrix_norm(inputs, 2)
+    sigma_2L = (torch.linalg.svdvals(labels) / X_spec_norm).square()
     sigma_2 = sigma_2L ** (1/L)
-    num = sigma_2L.unsqueeze(1) - sigma_2L.unsqueeze(0)
-    den = sigma_2.unsqueeze(1) - sigma_2.unsqueeze(0)
-    result = torch.linalg.norm(X, ord=2).square() / X.size(0) \
+    num = pad(sigma_2L, inputs.size(1)).unsqueeze(0) - pad(sigma_2L, labels.size(1)).unsqueeze(1)
+    den = pad(sigma_2, inputs.size(1)).unsqueeze(0) - pad(sigma_2, labels.size(1)).unsqueeze(1)
+    result = X_spec_norm.square() / inputs.size(0) \
         * torch.where(den.abs()>1e-8, num/den, (L*sigma_2L/sigma_2).unsqueeze(1))
     return torch.sort(result, descending=True).values.to("cpu").flatten()[:n_eigs].numpy()
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
                 sigma_x=SIGMA_X, max_prop=max_prop,
                 Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=False,
                 act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-                loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
+                loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
                 epochs=EPOCHS, log_every=EPOCHS, device=DEVICE, seed=SEED,      # Log at the end of training only
                 tracker_fns=(compute_numerical_eigvals, compute_theoretical_eigvals)
             )

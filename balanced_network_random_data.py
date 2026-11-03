@@ -5,7 +5,7 @@ import torch
 import matplotlib.pyplot as plt
 
 from constants import *
-from utilities import pad
+from utilities import pad, loss_fn
 
 
 source_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -61,12 +61,12 @@ print(f"Error in Equation 20b: {(
 
 # 5. Loss and Autograd Hessian
 def get_loss(flat_params):
-    out, pointer = X, 0
+    outputs, pointer = X, 0
     for l in range(len(weights)):
         W = flat_params[pointer:pointer+weights[l].numel()].view_as(weights[l])
-        out = W @ out
+        outputs = W @ outputs
         pointer += weights[l].numel()
-    return 0.5 / n * torch.sum((out-Y)**2)
+    return loss_fn(outputs, Y, loss_type=MSE_LOSS)
 
 flat_W = torch.cat([W.flatten() for W in weights])
 H = torch.autograd.functional.hessian(get_loss, flat_W)

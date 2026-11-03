@@ -1,26 +1,25 @@
 import os
-from functools import partial
 
 import numpy as np
 import torch
 from torchvision import datasets
 import matplotlib.pyplot as plt
 
-from utilities import pad, train_gd
+from utilities import pad, loss_fn, train_gd
 from constants import *
 
 
-def compute_numerical_eigvals(X, Y, model, device, n_eigs=None):
+def compute_numerical_eigvals(inputs, labels, model, loss_type, device, n_eigs=None):
 
     weights = [p for p in model.parameters()]
 
     def get_loss(flat_params):
-        out, pointer = X, 0
+        outputs, pointer = inputs, 0
         for l in range(len(weights)):
             W = flat_params[pointer:pointer+weights[l].numel()].view_as(weights[l])
-            out = out @ W.T
+            outputs = outputs @ W.T
             pointer += weights[l].numel()
-        return 0.5 / X.size(0) * torch.sum((out-Y)**2)
+        return loss_fn(outputs, labels, loss_type=loss_type)
 
     flat_W = torch.cat([W.flatten() for W in weights])
     H = torch.autograd.functional.hessian(get_loss, flat_W)
@@ -28,13 +27,13 @@ def compute_numerical_eigvals(X, Y, model, device, n_eigs=None):
     return torch.sort(eigs_actual, descending=True).values.cpu().numpy()[:n_eigs]
 
 @torch.no_grad()
-def compute_theoretical_eigvals(X, Y, model, device, n_eigs=None):
+def compute_theoretical_eigvals(inputs, labels, model, loss_type, device, n_eigs=None):
     W1, W2 = model._all_layers()
-    X_spec_norm = torch.linalg.matrix_norm(X, 2).item()
+    X_spec_norm = torch.linalg.matrix_norm(inputs, 2).item()
     # Can remove the padding and verify that the eigenvalues don't match
     W1_svdvals_sq = pad(torch.linalg.svdvals(W1.weight.data).square(), W1.weight.data.size(1))
     W2_svdvals_sq = pad(torch.linalg.svdvals(W2.weight.data).square(), W2.weight.data.size(0))
-    upper_bounds = X_spec_norm**2 / X.size(0) * (
+    upper_bounds = X_spec_norm**2 / inputs.size(0) * (
         W1_svdvals_sq[:n_eigs, None] + W2_svdvals_sq[None, :n_eigs]
     ).flatten().to("cpu").numpy()
     upper_bounds = np.sort(upper_bounds, descending=True)[:n_eigs]
@@ -62,7 +61,7 @@ if __name__ == "__main__":
             sigma_x=SIGMA_X, max_prop=MAX_PROP,
             Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=False,
             act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-            loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
+            loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
             epochs=EPOCHS, log_every=float("inf"), device=DEVICE, seed=SEED,
         )
         assets, out = train_gd(**kwargs)

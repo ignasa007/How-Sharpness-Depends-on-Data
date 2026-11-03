@@ -12,22 +12,22 @@ from utilities import pad, compute_hvp, lanczos, train_gd
 from constants import *
 
 
-def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
+def compute_numerical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     model.zero_grad()
     parameters = parameters_to_vector(model.parameters()).detach().cpu()
-    hvp_delta = lambda vector: compute_hvp(X, Y, model, vector, device).detach().cpu()
+    hvp_delta = lambda vector: compute_hvp(inputs, labels, model, loss_type, vector, device).detach().cpu()
     eigenvalues, _ = lanczos(tensor_matvec=hvp_delta, p=len(parameters), n_eigs=n_eigs)
     return eigenvalues.numpy()
 
 @torch.no_grad()
-def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
+def compute_theoretical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     W1, W2 = model._all_layers()
-    X_spec_norm = torch.linalg.matrix_norm(X, 2)
+    X_spec_norm = torch.linalg.matrix_norm(inputs, 2)
     # Make size d_0
     W1_svdvals_sq = pad(torch.linalg.svdvals(W1.weight.data).square(), W1.weight.data.size(1))
     # Make size d_2
     W2_svdvals_sq = pad(torch.linalg.svdvals(W2.weight.data).square(), W2.weight.data.size(0))
-    upper_bounds = X_spec_norm**2 / X.size(0) * (
+    upper_bounds = X_spec_norm.square() / inputs.size(0) * (
         W1_svdvals_sq[:n_eigs, None] + W2_svdvals_sq[None, :n_eigs]
     ).flatten()
     upper_bounds = torch.sort(upper_bounds, descending=True).values[:n_eigs].to("cpu").numpy()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             sigma_x=SIGMA_X, max_prop=MAX_PROP,
             Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=False,
             act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-            loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
+            loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
             epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
             tracker_fns=(
                 partial(compute_numerical_eigvals, n_eigs=N_EIGS),

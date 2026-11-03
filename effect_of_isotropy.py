@@ -1,6 +1,5 @@
 import os
 from inspect import signature
-import pickle
 
 import numpy as np
 import torch
@@ -18,11 +17,12 @@ source_name = os.path.splitext(os.path.basename(__file__))[0]
 DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
 OUTPUT_DIMS = (10, 10, 10)
 d, L = 128, 2
+LOSS_TYPE = MSE_LOSS
 width = 0.8
 hessian_sharpness = None    # Set to any value to not compute sharpness
 
 
-def main(Dataset, feat_transform, output_dim, L, d):
+def main(Dataset, feat_transform, output_dim, L, d, loss_type):
 
     print(f"*** Dataset = {Dataset.__name__}, feat_transform = {feat_transform.__name__}{signature(feat_transform)}, width = {d}, depth = {L} ***")
 
@@ -38,7 +38,7 @@ def main(Dataset, feat_transform, output_dim, L, d):
     x = feat_transform(x)
     y = F.one_hot(y, num_classes=output_dim).float().to(DEVICE) # (n, d_L)
     w = torch.linalg.pinv(x) @ y                                # (d_0, d_L)
-    loss = loss_fn(x@w, y, loss_type="Mean Squared Error")
+    loss = loss_fn(x@w, y, loss_type=loss_type)
     print(f"OLS regression loss: {loss.item():.6e}")
 
     u_1, s_W, v_L = torch.linalg.svd(w, full_matrices=False)    # (d_0, d_L), (d_L,), (d_L, d_L), assuming d_L < d_0
@@ -85,7 +85,7 @@ def main(Dataset, feat_transform, output_dim, L, d):
         model = nn.Sequential(*model)
         model = model.to(DEVICE)
         with torch.no_grad():
-            loss = loss_fn(model(x), y, loss_type="Mean Squared Error")
+            loss = loss_fn(model(x), y, loss_type=loss_type)
             print(f"Simulated OLS solution's loss: {loss.item():.6e}")
         p = sum(p.numel() for p in model.parameters() if p.requires_grad)
         hvp_delta = lambda vector: compute_hvp(x, y, model, vector).detach().cpu()
@@ -109,7 +109,7 @@ if not hasattr(axs, "__len__"):
 
 outs = list()
 for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
-    outs.append(main(Dataset, identity, output_dim, L, d))
+    outs.append(main(Dataset, identity, output_dim, L, d, LOSS_TYPE))
     print()
 
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))
@@ -131,7 +131,7 @@ ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=1.0)
 
 outs = list()
 for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
-    outs.append(main(Dataset, whiten, output_dim, L, d))
+    outs.append(main(Dataset, whiten, output_dim, L, d, LOSS_TYPE))
     print()
 
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))
@@ -158,7 +158,7 @@ for pert_rad in pert_rads:
         torch.manual_seed(0)
         x = (u * np.sqrt(x.size(0)) * torch.clip(2.5+pert_rad*torch.randn_like(s), min=0.)) @ vt
         return x
-    outs.append(main(Dataset, random_spectrum, output_dim, L, d))
+    outs.append(main(Dataset, random_spectrum, output_dim, L, d, LOSS_TYPE))
     print()
 
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))

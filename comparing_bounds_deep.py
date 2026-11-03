@@ -11,20 +11,20 @@ from utilities import compute_hvp, lanczos, train_gd
 from constants import *
 
 
-def compute_numerical_eigvals(X, Y, model, device, n_eigs=1):
+def compute_numerical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     model.zero_grad()
     parameters = parameters_to_vector(model.parameters()).detach().cpu()
-    hvp_delta = lambda vector: compute_hvp(X, Y, model, vector, device).detach().cpu()
+    hvp_delta = lambda vector: compute_hvp(inputs, labels, model, loss_type, vector, device).detach().cpu()
     eigenvalues, _ = lanczos(tensor_matvec=hvp_delta, p=len(parameters), n_eigs=n_eigs)
     return eigenvalues.numpy()
 
 @torch.no_grad()
-def compute_theoretical_eigvals(X, Y, model, device, n_eigs=1):
-    X_spec_norm = torch.linalg.matrix_norm(X, 2).cpu().numpy()
+def compute_theoretical_eigvals(inputs, labels, model, loss_type, device):
+    X_spec_norm = torch.linalg.matrix_norm(inputs, 2)
     all_layers = model._all_layers()
     L, W = len(all_layers), all_layers[0]
-    W_spec_norm = torch.linalg.matrix_norm(W.weight.data, 2).cpu().numpy()
-    return X_spec_norm**2 / X.size(0) * L * W_spec_norm**(2*(L-1))
+    W_spec_norm = torch.linalg.matrix_norm(W.weight.data, 2)
+    return (X_spec_norm**2 / inputs.size(0) * L * W_spec_norm**(2*(L-1))).cpu().numpy()
 
 
 if __name__ == "__main__":
@@ -36,7 +36,6 @@ if __name__ == "__main__":
     MAX_PROP = None
     WIDTHS = NARROW_DEEP_WIDTHS
     LR = NARROW_DEEP_LR
-    N_EIGS = 1
 
     fig, axs = plt.subplots(1, len(DATASETS), figsize=(AX_WIDTH*len(DATASETS), AX_HEIGHT*1))
     if not hasattr(axs, "__len__"):
@@ -49,11 +48,11 @@ if __name__ == "__main__":
             sigma_x=SIGMA_X, max_prop=MAX_PROP,
             Model=MODEL, model_kwargs=MODEL_KWARGS, widths=WIDTHS, balanced_init=False,
             act_name=ACTIVATION, act_kwargs=ACT_KWARGS,
-            loss_type=LOSS_TYPE, lr=LR, sgd_kwargs=SGD_KWARGS,
+            loss_type=MSE_LOSS, lr=LR, sgd_kwargs=SGD_KWARGS,
             epochs=EPOCHS, log_every=LOG_EVERY, device=DEVICE, seed=SEED,
             tracker_fns=(
-                partial(compute_numerical_eigvals, n_eigs=N_EIGS),
-                partial(compute_theoretical_eigvals, n_eigs=N_EIGS),
+                partial(compute_numerical_eigvals, n_eigs=1),
+                compute_theoretical_eigvals,
             )
         )
         assets, out = train_gd(**kwargs)

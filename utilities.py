@@ -134,19 +134,20 @@ class MLP(nn.Module):
         x = self.normalization(x)
         return self.readout(x)
 
-def loss_fn(outputs, one_hot, loss_type):
-    if loss_type.lower() == "cross entropy loss":
-        return F.cross_entropy(outputs, one_hot, reduction="sum") / outputs.size(0)
-    elif loss_type.lower() == "mean squared error":
-        return 0.5 * F.mse_loss(outputs, one_hot, reduction="sum") / outputs.size(0)
+def loss_fn(outputs, labels, loss_type):
+    if loss_type.lower() == "mean squared error":
+        return 0.5 * F.mse_loss(outputs, labels, reduction="sum") / outputs.size(0)
+    elif loss_type.lower() == "cross entropy loss":
+        return F.cross_entropy(outputs, labels, reduction="sum") / outputs.size(0)
 
-def sq_parameter_norm(X, Y, model, device):
+def sq_parameter_norm(inputs, labels, model, device):
     return [p.norm().square().item() for p in model.parameters()]
 
-def compute_hvp(X, Y, model, vector, device):
+def compute_hvp(inputs, labels, model, loss_type, vector, device):
     model.zero_grad()
     vector = vector.to(device)
-    loss = loss_fn(model(X), Y, loss_type="Mean Squared Error")
+    print(loss_type)
+    loss = loss_fn(model(inputs), labels, loss_type=loss_type)
     grad = autograd.grad(loss, model.parameters(), create_graph=True)
     dot = parameters_to_vector(grad).mul(vector).sum()
     hvp = autograd.grad(dot, model.parameters())
@@ -220,7 +221,7 @@ def train_gd(
     losses = list()
     tracked_vals = [[]]
     for tracker_fn in tracker_fns:
-        tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
+        tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, loss_type, device))
 
     if use_ols_soln:
 
@@ -245,7 +246,7 @@ def train_gd(
         
         tracked_vals.append([])
         for tracker_fn in tracker_fns:
-            tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
+            tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, loss_type, device))
 
     else:
 
@@ -271,7 +272,7 @@ def train_gd(
                 print(f'Epoch [{epoch}/{epochs}], Loss: {loss.item():.4f}, Acc: {acc:.2f}%')
                 tracked_vals.append([])
                 for tracker_fn in tracker_fns:
-                    tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, device))
+                    tracked_vals[-1].append(tracker_fn(train_inputs, one_hot, model, loss_type, device))
 
     assets = (train_inputs, one_hot, model)
     out = [np.array(losses)]
