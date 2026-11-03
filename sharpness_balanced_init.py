@@ -64,7 +64,7 @@ if __name__ == "__main__":
         ax.plot(MAX_PROPS, numerical_eigvals, linewidth=LINE_WIDTH, marker="o", ms=MARKER_SIZE, label=Dataset.__name__)
     ax.plot(MAX_PROPS, theoretical_eigvals, linewidth=LINE_WIDTH, marker="o", ms=MARKER_SIZE, color="black", label="Predictions")
 
-    ax.set_xticks(MAX_PROPS)
+    ax.set_xticks(MAX_PROPS[1::2])
     ax.tick_params(axis="both", labelsize=LABEL_SIZE)
     ax.set_xlabel("Maximum Label Proportion", fontsize=FONT_SIZE)
     ax.set_ylabel("Final Sharpness", fontsize=FONT_SIZE)

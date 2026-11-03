@@ -65,7 +65,7 @@ if __name__ == "__main__":
         ax.plot(
             LOG_EVERY*np.arange(0, len(numerical_eigvals)),
             numerical_eigvals,
-            linewidth=LINE_WIDTH, color="black", label="Sharpness"
+            linewidth=LINE_WIDTH, color="black", label="Hessian Sharpness"
         )
         ax.plot(
             LOG_EVERY*np.arange(0, len(theoretical_eigvals)),

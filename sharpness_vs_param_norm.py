@@ -58,7 +58,7 @@ if __name__ == "__main__":
         )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
-        ax.set_ylabel("Sharpness", fontsize=FONT_SIZE, color=p[-1].get_color())
+        ax.set_ylabel("Hessian Sharpness", fontsize=FONT_SIZE, color=p[-1].get_color())
         ax.grid()
         ax_twin = ax.twinx()
         p = ax_twin.plot(
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             linestyle="--", linewidth=LINE_WIDTH, color="brown"
         )
         ax_twin.tick_params(axis="both", labelsize=LABEL_SIZE)
-        ax_twin.set_ylabel("Parameter Norm", fontsize=FONT_SIZE, color=p[-1].get_color(), rotation=270, labelpad=20)
+        ax_twin.set_ylabel("Squared Parameter-Norm", fontsize=FONT_SIZE, color=p[-1].get_color(), rotation=270, labelpad=20)
 
     fig.tight_layout()
     fn = f"{ASSETS}/{source_name}.png"
