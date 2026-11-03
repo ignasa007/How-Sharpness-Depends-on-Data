@@ -59,7 +59,7 @@ if __name__ == "__main__":
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
         ax.set_ylabel("Hessian Sharpness", fontsize=FONT_SIZE, color=p[-1].get_color())
-        ax.grid()
+        # ax.grid()
         ax_twin = ax.twinx()
         p = ax_twin.plot(
             LOG_EVERY*np.arange(0, len(sq_param_norms)),

@@ -76,7 +76,7 @@ if __name__ == "__main__":
         ax.set_xticks(MAX_PROPS[1::2])
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Maximum Label Proportion", fontsize=FONT_SIZE)
-        ax.grid()
+        # ax.grid()
 
     axs[0].set_ylabel("Final Sharpness", fontsize=FONT_SIZE)
     axs[0].legend(loc="upper left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)

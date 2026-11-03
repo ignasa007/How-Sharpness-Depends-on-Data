@@ -19,7 +19,8 @@ OUTPUT_DIMS = (10, 10, 10)
 d, L = 128, 2
 LOSS_TYPE = MSE_LOSS
 width = 0.8
-hessian_sharpness = None    # Set to any value to not compute sharpness
+ntk_sharpness = None        # Set to any value to not compute ntk sharpness
+# hessian_sharpness = None    # Set to any value to not compute hessian sharpness
 
 
 def main(Dataset, feat_transform, output_dim, L, d, loss_type):
@@ -52,12 +53,15 @@ def main(Dataset, feat_transform, output_dim, L, d, loss_type):
     upper_bound = L * lower_bound
 
     # NTK sharpness
-    ntk, xu_1 = 0., x @ u_1
-    for l in range(1, L+1):
-        left_gram = 1/x.size(0) * (x @ x.T if l == 1 else (xu_1 * s_W**(2*(l-1))) @ xu_1.T)
-        right_gram = (v_L * s_W**(2*(L-l))) @ v_L.T
-        ntk += torch.kron(left_gram, right_gram)
-    ntk_sharpness = torch.lobpcg(ntk)[0].item()
+    if "ntk_sharpness" in globals():
+        ntk_sharpness = globals()["ntk_sharpness"]
+    else:
+        ntk, xu_1 = 0., x @ u_1
+        for l in range(1, L+1):
+            left_gram = 1/x.size(0) * (x @ x.T if l == 1 else (xu_1 * s_W**(2*(l-1))) @ xu_1.T)
+            right_gram = (v_L * s_W**(2*(L-l))) @ v_L.T
+            ntk += torch.kron(left_gram, right_gram)
+        ntk_sharpness = torch.lobpcg(ntk)[0].item()
 
     # Hessian sharpness
     if "hessian_sharpness" in globals():
@@ -88,7 +92,7 @@ def main(Dataset, feat_transform, output_dim, L, d, loss_type):
             loss = loss_fn(model(x), y, loss_type=loss_type)
             print(f"Simulated OLS solution's loss: {loss.item():.6e}")
         p = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        hvp_delta = lambda vector: compute_hvp(x, y, model, vector).detach().cpu()
+        hvp_delta = lambda vector: compute_hvp(x, y, model, LOSS_TYPE, vector, DEVICE).detach().cpu()
         hessian_sharpness, _ = lanczos(tensor_matvec=hvp_delta, p=p, n_eigs=1)
         hessian_sharpness = hessian_sharpness.item()
         del model
@@ -115,8 +119,8 @@ for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))
 objs = (
     (lower_bounds, "Lower Bound"),
-    (ntk_sharpnesses, "NTK Sharpness"),
-    # (hessian_sharpnesses, "Hessian Sharpness"),   # Plot to verify that the NTK sharpness has been correctly computed
+    # (ntk_sharpnesses, "NTK Sharpness"),
+    (hessian_sharpnesses, "Hessian Sharpness"),   # Plot to verify that the NTK sharpness has been correctly computed
     (upper_bounds, "Upper Bound"),
 )
 
@@ -137,7 +141,8 @@ for Dataset, output_dim in zip(DATASETS, OUTPUT_DIMS):
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))
 objs = (
     (lower_bounds, "Lower Bound"),
-    (ntk_sharpnesses, "NTK Sharpness"),
+    # (ntk_sharpnesses, "NTK Sharpness"),
+    (hessian_sharpnesses, "Hessian Sharpness"),
     (upper_bounds, "Upper Bound"),
 )
 
@@ -164,7 +169,8 @@ for pert_rad in pert_rads:
 lower_bounds, ntk_sharpnesses, hessian_sharpnesses, upper_bounds = map(np.array, zip(*outs))
 objs = (
     (lower_bounds, "Lower Bound"),
-    (ntk_sharpnesses, "NTK Sharpness"),
+    # (ntk_sharpnesses, "NTK Sharpness"),
+    (hessian_sharpnesses, "Hessian Sharpness"),
     (upper_bounds, "Upper Bound"),
 )
 
@@ -181,4 +187,4 @@ fn = f"{ASSETS}/{source_name}.png"
 os.makedirs(os.path.dirname(fn), exist_ok=True)
 plt.savefig(fn)
 plt.close()
-print(f"\nPlot saved at {fn}")
+print(f"Plot saved at {fn}")

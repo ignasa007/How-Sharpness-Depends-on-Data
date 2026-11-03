@@ -81,7 +81,7 @@ if __name__ == "__main__":
         ax.set_ylabel(r"Eigenvalue, $\lambda_i$", fontsize=FONT_SIZE)
         ax.set_title(Dataset.__name__, fontsize=20)
         ax.set_xscale("log")
-        ax.grid()
+        # ax.grid()
 
     axs[0].legend(loc="lower left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 

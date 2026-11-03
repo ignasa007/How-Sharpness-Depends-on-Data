@@ -77,7 +77,7 @@ if __name__ == "__main__":
             )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
-        ax.grid()
+        # ax.grid()
 
     axs[0].set_ylabel(r"%Error in $\lambda_{{i}}$ Approximation", fontsize=FONT_SIZE)
     axs[0].legend(loc="upper right", ncol=2, fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)

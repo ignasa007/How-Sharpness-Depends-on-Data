@@ -124,7 +124,7 @@ for ax in axs:
     ax.tick_params(axis="both", labelsize=LABEL_SIZE)
     ax.set_xlabel("Width", fontsize=FONT_SIZE)
     ax.legend(fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
-    ax.grid()
+    # ax.grid()
 
 fig.tight_layout()
 fn = f"{ASSETS}/{source_name}.png"

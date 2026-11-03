@@ -69,7 +69,7 @@ if __name__ == "__main__":
     ax.set_xlabel("Maximum Label Proportion", fontsize=FONT_SIZE)
     ax.set_ylabel("Final Sharpness", fontsize=FONT_SIZE)
     ax.legend(loc="upper left", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
-    ax.grid()
+    # ax.grid()
 
     fig.tight_layout()
     fn = f"{ASSETS}/{source_name}.png"

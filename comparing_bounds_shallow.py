@@ -81,7 +81,7 @@ if __name__ == "__main__":
         )
         ax.tick_params(axis="both", labelsize=LABEL_SIZE)
         ax.set_xlabel("Epoch", fontsize=FONT_SIZE)
-        ax.grid()
+        # ax.grid()
 
     axs[0].legend(loc="upper right", fontsize=FONT_SIZE, framealpha=FRAME_ALPHA)
 
