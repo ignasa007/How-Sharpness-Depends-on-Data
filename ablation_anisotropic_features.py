@@ -14,14 +14,17 @@ def compute_numerical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1
     parameters = parameters_to_vector(model.parameters()).detach().cpu()
     hvp_delta = lambda vector: compute_hvp(inputs, labels, model, loss_type, vector, device).detach().cpu()
     eigenvalues, _ = lanczos(tensor_matvec=hvp_delta, p=len(parameters), n_eigs=n_eigs)
+    print(eigenvalues)
     return eigenvalues.numpy()
 
 @torch.no_grad()
 def compute_theoretical_eigvals(inputs, labels, model, loss_type, device, n_eigs=1):
     L = len(list(model.parameters()))
     X_spec_norm = torch.linalg.matrix_norm(inputs, 2)
-    sigma_2L = (torch.linalg.svdvals(labels) / X_spec_norm).square()
+    sigma_2L = (torch.linalg.svdvals(inputs.T @ labels) / X_spec_norm.square()).square()
     sigma_2 = sigma_2L ** (1/L)
+    # breakpoint()
+    print(X_spec_norm.square() / inputs.size(0) * torch.linalg.matrix_norm(model._all_layers()[0].weight, 2) ** (2*(L-1)))
     num = pad(sigma_2L, inputs.size(1)).unsqueeze(0) - pad(sigma_2L, labels.size(1)).unsqueeze(1)
     den = pad(sigma_2, inputs.size(1)).unsqueeze(0) - pad(sigma_2, labels.size(1)).unsqueeze(1)
     result = X_spec_norm.square() / inputs.size(0) \
@@ -33,8 +36,8 @@ if __name__ == "__main__":
 
     source_name = os.path.splitext(os.path.basename(__file__))[0]
 
-    DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)
-    OUTPUT_DIM, MAX_PROPS = 10, np.linspace(0.1, 1.0, 10)
+    DATASETS = (datasets.MNIST, datasets.FashionMNIST, datasets.CIFAR10)[:1]
+    OUTPUT_DIM, MAX_PROPS = 10, np.linspace(0.1, 1.0, 10)[:1]
     WIDTHS = NARROW_DEEP_WIDTHS
     LR = NARROW_DEEP_LR
 
@@ -61,6 +64,7 @@ if __name__ == "__main__":
             numerical_eigvals.append(numerical_eigval[-1].item())
             theoretical_eigvals.append(theoretical_eigval[-1].item())
         ax.plot(MAX_PROPS, numerical_eigvals, linewidth=LINE_WIDTH, marker="o", ms=MARKER_SIZE, label=Dataset.__name__)
+        ax.scatter(MAX_PROPS, theoretical_eigvals, marker="x", color="black", s=MARKER_SIZE**2)
 
     ax.set_xticks(MAX_PROPS[1::2])
     ax.set_yscale("log")

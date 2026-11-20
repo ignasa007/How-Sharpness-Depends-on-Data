@@ -71,6 +71,10 @@ class MLP(nn.Module):
             assert x.size(0) >= x.size(1)
             u, _, vt = torch.linalg.svd(x, full_matrices=False)
             x = (u * sigma_x*np.sqrt(u.size(0))) @ vt
+        else:
+            assert x.size(0) >= x.size(1)
+            u, s, vt = torch.linalg.svd(x, full_matrices=False)
+            x = (u * torch.clamp_min(s, min=1e-4)) @ vt
         return x
 
     @torch.no_grad()
@@ -231,7 +235,9 @@ def train_gd(
             loss = loss_fn(outputs, one_hot, loss_type)
             losses.append(loss.item())
         
-        ols_soln = (torch.linalg.pinv(train_inputs) @ one_hot).T
+        # ols_soln = (torch.linalg.pinv(train_inputs) @ one_hot).T
+        u, s, vt = torch.linalg.svd(train_inputs, full_matrices=False)
+        ols_soln = ((vt.T*1/s) @ u.T @ one_hot).T
         model.balanced_solution(ols_soln, seed=seed)
         
         with torch.no_grad():
